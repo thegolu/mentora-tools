@@ -1,0 +1,477 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Assessment insights · Mentoral</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,500;0,600;0,700;1,500&family=Plus+Jakarta+Sans:ital,wght@0,400;0,500;0,600;0,700;0,800;1,400&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="styles.css" />
+    <script>
+      window.__MENTORAL_CONFIG__ = window.__MENTORAL_CONFIG__ || {
+        supabaseUrl: "",
+        supabaseAnonKey: "",
+      };
+    </script>
+  </head>
+  <body>
+    <div class="app-shell">
+      <header class="app-header">
+        <div class="header-inner">
+          <div class="brand">
+            <div class="brand-mark" aria-hidden="true">M</div>
+            <div class="brand-text">
+              <h1>Mentoral</h1>
+              <p>Assessment & guardian communications</p>
+            </div>
+          </div>
+          <div class="header-meta">
+            <input
+              type="file"
+              id="file-csv-upload"
+              accept=".csv,text/csv"
+              hidden
+              aria-hidden="true"
+            />
+            <div class="header-actions">
+              <button type="button" class="btn btn-ghost btn-sm" id="btn-upload-csv">
+                Upload CSV
+              </button>
+              <button type="button" class="btn btn-ghost btn-sm" id="btn-export-csv">
+                Export CSV
+              </button>
+              <button type="button" class="btn btn-ghost btn-sm" id="btn-template-csv">
+                Template
+              </button>
+              <button type="button" class="btn btn-secondary btn-sm" id="btn-cohort-settings">
+                Cohort settings
+              </button>
+              <button type="button" class="btn btn-primary btn-sm" id="btn-load-demo">
+                Load dummy data
+              </button>
+            </div>
+            <label class="dev-dummy-toggle">
+              <input type="checkbox" id="dev-autoload-dummy" />
+              <span>Auto-load dummy when empty</span>
+            </label>
+            <span class="env-pill" id="data-source-pill">Local storage</span>
+          </div>
+        </div>
+      </header>
+
+      <main class="layout">
+        <div class="page-intro">
+          <h2>Test performance</h2>
+          <p>
+            Upload a CSV of your students (scores and dates only — no JSON), or
+            load dummy data for development. Use <strong>Cohort settings</strong> to
+            rename or add classes, batches, and paaths. Data saves to this browser;
+            add Supabase in <code>config.js</code> for cloud sync.
+          </p>
+        </div>
+
+        <div id="data-empty-banner" class="data-empty-banner hidden">
+          <p>
+            <strong>No students loaded.</strong> Upload a CSV (see
+            <strong>Template</strong> for a simple example), or load dummy data.
+          </p>
+        </div>
+
+        <div class="paath-tabs-wrap">
+          <p class="paath-tabs-label" id="paath-tabs-label">Paath (select one)</p>
+          <div
+            class="paath-tabs"
+            role="tablist"
+            aria-labelledby="paath-tabs-label"
+          ></div>
+        </div>
+
+        <section
+          class="filters"
+          aria-label="Filters"
+          id="paath-panel"
+          role="tabpanel"
+          aria-labelledby="paath-tabs-label"
+        >
+          <div class="filter-group">
+            <label for="filter-class">Class</label>
+            <select id="filter-class">
+              <option value="">All classes</option>
+            </select>
+          </div>
+          <div class="filter-group">
+            <label for="filter-batch">Batch</label>
+            <select id="filter-batch">
+              <option value="">All batches</option>
+            </select>
+          </div>
+          <div class="filter-group filter-group--wide">
+            <label for="filter-test">Assessment (optional)</label>
+            <select
+              id="filter-test"
+              title="Blank: each row uses its latest stored score. Pick a test: KPIs use that attempt only."
+            >
+              <option value="">Latest score per student (row summary)</option>
+            </select>
+          </div>
+        </section>
+
+        <section class="kpi-row" id="dashboard-kpis" aria-label="Summary">
+          <article class="kpi">
+            <div class="kpi-top">
+              <span class="label">Cohort size</span>
+              <span class="kpi-icon" aria-hidden="true">
+                <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="2"
+                    d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z"
+                  />
+                </svg>
+              </span>
+            </div>
+            <div class="value" id="kpi-count">—</div>
+            <div class="sub">Students in current filters</div>
+          </article>
+          <article class="kpi">
+            <div class="kpi-top">
+              <span class="label">Average score</span>
+              <span class="kpi-icon" aria-hidden="true">
+                <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="2"
+                    d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"
+                  />
+                </svg>
+              </span>
+            </div>
+            <div class="value" id="kpi-avg">—</div>
+            <div class="sub" id="kpi-avg-sub">Out of 100</div>
+          </article>
+          <article class="kpi">
+            <div class="kpi-top">
+              <span class="label">Pass rate</span>
+              <span class="kpi-icon" aria-hidden="true">
+                <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="2"
+                    d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
+                  />
+                </svg>
+              </span>
+            </div>
+            <div class="value" id="kpi-pass">—</div>
+            <div class="sub" id="kpi-pass-sub">Score ≥ 50</div>
+          </article>
+          <article class="kpi">
+            <div class="kpi-top">
+              <span class="label">Score spread</span>
+              <span class="kpi-icon" aria-hidden="true">
+                <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="2"
+                    d="M7 16V4m0 0L3 8m4-4l4 4m6 0v12m0 0l4-4m-4 4l-4-4"
+                  />
+                </svg>
+              </span>
+            </div>
+            <div class="value" id="kpi-range">—</div>
+            <div class="sub">Lowest – highest</div>
+          </article>
+        </section>
+
+        <div class="charts-grid" id="dashboard-charts">
+          <article class="chart-card">
+            <h3>Average by class &amp; batch</h3>
+            <p class="chart-card-hint">
+              Each class shows every batch side by side (averages not merged).
+            </p>
+            <div class="chart-wrap">
+              <canvas id="chart-class"></canvas>
+            </div>
+          </article>
+          <article class="chart-card">
+            <h3>Batch total (current filters)</h3>
+            <p class="chart-card-hint">
+              Overall average per batch across everyone in this view.
+            </p>
+            <div class="chart-wrap">
+              <canvas id="chart-batch"></canvas>
+            </div>
+          </article>
+          <article class="chart-card">
+            <h3>Pass vs needs support</h3>
+            <div class="chart-wrap">
+              <canvas id="chart-pass"></canvas>
+            </div>
+          </article>
+          <article class="chart-card">
+            <h3>Score distribution</h3>
+            <div class="chart-wrap">
+              <canvas id="chart-hist"></canvas>
+            </div>
+          </article>
+        </div>
+
+        <section
+          class="table-section"
+          id="dashboard-table"
+          aria-labelledby="results-heading"
+        >
+          <div class="table-head">
+            <h3 id="results-heading">Student results</h3>
+            <span id="table-filter-hint">Click a row for full detail</span>
+          </div>
+          <div class="table-scroll">
+            <table id="student-table">
+              <thead>
+                <tr>
+                  <th>ID</th>
+                  <th>Student</th>
+                  <th>Guardian</th>
+                  <th>Class</th>
+                  <th>Batch</th>
+                  <th>Score</th>
+                  <th>Attempt</th>
+                  <th class="col-narrow">Notify</th>
+                </tr>
+              </thead>
+              <tbody></tbody>
+            </table>
+          </div>
+        </section>
+      </main>
+    </div>
+
+    <div
+      id="student-detail-modal"
+      class="modal-backdrop"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="detail-modal-title"
+      hidden
+    >
+      <div class="modal-dialog modal-dialog--wide">
+        <div class="modal-header">
+          <div>
+            <h4 id="detail-modal-title">Student overview</h4>
+            <p>Test attempts, scores, and parent notification.</p>
+          </div>
+          <button
+            type="button"
+            class="modal-close"
+            id="detail-modal-close"
+            aria-label="Close"
+          >
+            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M6 18L18 6M6 6l12 12"
+              />
+            </svg>
+          </button>
+        </div>
+        <div class="modal-body" id="student-detail-body"></div>
+        <div class="modal-footer modal-footer--split">
+          <span class="footer-hint">Tip: row click opens this view anytime.</span>
+          <button type="button" class="btn btn-ghost" id="detail-modal-done">
+            Close
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <div
+      id="guardian-modal"
+      class="modal-backdrop modal-backdrop--guardian"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="modal-title"
+      aria-describedby="modal-desc"
+      hidden
+    >
+      <div class="modal-dialog">
+        <div class="modal-header">
+          <div>
+            <h4 id="modal-title">Message to guardian</h4>
+            <p id="modal-desc">
+              Review the test summary and send an update. Channels use the
+              device’s email or SMS app; integrate your API later for automated
+              delivery.
+            </p>
+          </div>
+          <button
+            type="button"
+            class="modal-close"
+            id="modal-close"
+            aria-label="Close"
+          >
+            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M6 18L18 6M6 6l12 12"
+              />
+            </svg>
+          </button>
+        </div>
+        <div class="modal-body">
+          <div class="modal-summary" id="modal-student-summary"></div>
+          <div class="form-row">
+            <div class="form-group">
+              <label for="guardian-name">Guardian name</label>
+              <input type="text" id="guardian-name" autocomplete="name" />
+            </div>
+            <div class="form-group">
+              <label for="guardian-email">Email</label>
+              <input
+                type="email"
+                id="guardian-email"
+                autocomplete="email"
+                inputmode="email"
+              />
+            </div>
+          </div>
+          <div class="form-group">
+            <label for="guardian-phone">Mobile (SMS)</label>
+            <input
+              type="tel"
+              id="guardian-phone"
+              autocomplete="tel"
+              inputmode="tel"
+            />
+          </div>
+          <div class="form-group">
+            <span class="field-label">Channel</span>
+            <div class="channel-row" role="group" aria-label="Delivery channel">
+              <button
+                type="button"
+                class="channel-chip is-active"
+                data-channel="email"
+              >
+                Email
+              </button>
+              <button type="button" class="channel-chip channel-chip--wa" data-channel="whatsapp">
+                <svg viewBox="0 0 24 24" fill="currentColor" width="14" height="14" aria-hidden="true"><path d="M12.04 2C6.58 2 2.13 6.45 2.13 11.91c0 1.75.46 3.45 1.32 4.95L2.05 22l5.25-1.38c1.45.79 3.08 1.21 4.74 1.21 5.46 0 9.91-4.45 9.91-9.91S17.5 2 12.04 2zm0 18.16c-1.53 0-3.03-.41-4.34-1.18l-.31-.18-3.12.82.83-3.04-.2-.31a8.26 8.26 0 01-1.26-4.38c0-4.54 3.7-8.24 8.24-8.24s8.24 3.7 8.24 8.24-3.7 8.24-8.24 8.24zm4.52-6.17c-.25-.12-1.47-.72-1.69-.81-.23-.08-.39-.12-.56.12-.17.25-.64.81-.78.97-.14.17-.29.19-.54.06-.25-.12-1.05-.39-2-1.23-.74-.66-1.23-1.47-1.38-1.72-.14-.25-.02-.38.11-.51.11-.11.25-.29.37-.43.13-.14.17-.25.25-.41.08-.17.04-.31-.02-.43-.06-.12-.56-1.34-.76-1.84-.2-.48-.41-.42-.56-.43h-.48c-.17 0-.43.06-.66.31-.22.25-.86.85-.86 2.07 0 1.22.89 2.4 1.01 2.56.12.17 1.75 2.67 4.23 3.74.59.26 1.05.41 1.41.52.59.19 1.13.16 1.56.1.48-.07 1.47-.6 1.67-1.18.21-.58.21-1.07.14-1.18-.07-.11-.22-.17-.47-.29z"/></svg>
+                WhatsApp
+              </button>
+              <button type="button" class="channel-chip" data-channel="sms">
+                SMS
+              </button>
+              <button type="button" class="channel-chip" data-channel="copy">
+                Copy only
+              </button>
+            </div>
+          </div>
+          <div class="form-group">
+            <label for="guardian-message">Message</label>
+            <textarea id="guardian-message" rows="6"></textarea>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-ghost" id="modal-cancel">
+            Cancel
+          </button>
+          <button type="button" class="btn btn-primary" id="modal-send">
+            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"
+              />
+            </svg>
+            Send notification
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <div
+      id="settings-modal"
+      class="modal-backdrop"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="settings-modal-title"
+      hidden
+    >
+      <div class="modal-dialog modal-dialog--wide">
+        <div class="modal-header">
+          <div>
+            <h4 id="settings-modal-title">Cohort configuration</h4>
+            <p>
+              One label per line. These names must match the
+              <code>class</code>, <code>batch</code>, and <code>paath</code>
+              columns in your CSV. Changing labels does not rewrite existing
+              student rows.
+            </p>
+          </div>
+          <button
+            type="button"
+            class="modal-close"
+            id="settings-modal-close"
+            aria-label="Close"
+          >
+            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M6 18L18 6M6 6l12 12"
+              />
+            </svg>
+          </button>
+        </div>
+        <div class="modal-body">
+          <div class="form-group">
+            <label for="settings-classes">Classes</label>
+            <p class="field-hint">
+              One per line. After editing names, tab out of this field to refresh
+              per-class batch rows below.
+            </p>
+            <textarea id="settings-classes" rows="5" placeholder="Class Alpha"></textarea>
+          </div>
+          <div class="form-group">
+            <label for="settings-batches-default">Default batches</label>
+            <p class="field-hint">
+              Used for every class unless you override below. One batch per line.
+            </p>
+            <textarea id="settings-batches-default" rows="4" placeholder="Batch 1"></textarea>
+          </div>
+          <div id="settings-per-class-batches" class="settings-per-class-batches"></div>
+          <div class="form-group">
+            <label for="settings-paaths">Paaths</label>
+            <textarea id="settings-paaths" rows="4" placeholder="Paath A"></textarea>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-ghost" id="settings-modal-cancel">
+            Cancel
+          </button>
+          <button type="button" class="btn btn-primary" id="settings-modal-save">
+            Save configuration
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <div class="toast-host" id="toast-host" aria-live="polite"></div>
+
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+    <script type="module" src="app.js"></script>
+  </body>
+</html>

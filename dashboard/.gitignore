@@ -1,0 +1,5 @@
+.DS_Store
+**/.DS_Store
+
+# Local secrets (keep the existing one too)
+tool/config.js
